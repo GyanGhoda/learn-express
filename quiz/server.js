@@ -6,36 +6,52 @@ var cors = require('cors');
 const port = 8000;
 
 let users;
-fs.readFile(path.resolve(__dirname, '../data/users.json'), function(err, data) {
+fs.readFile(path.resolve(__dirname, '../data/users.json'), function (err, data) {
   console.log('reading file ... ');
-  if(err) throw err;
+  if (err) throw err;
   users = JSON.parse(data);
 })
 
 const addMsgToRequest = function (req, res, next) {
-  if(users) {
+  if (users) {
     req.users = users;
     next();
   }
   else {
     return res.json({
-        error: {message: 'users not found', status: 404}
+      error: { message: 'users not found', status: 404 }
     });
   }
-  
+
 }
 
 app.use(
-  cors({origin: 'http://localhost:3000'})
+  cors({ origin: 'http://localhost:3000' })
 );
 app.use('/read/usernames', addMsgToRequest);
 
 app.get('/read/usernames', (req, res) => {
-  let usernames = req.users.map(function(user) {
-    return {id: user.id, username: user.username};
+  let usernames = req.users.map(function (user) {
+    return { id: user.id, username: user.username };
   });
   res.send(usernames);
 });
+
+app.use('/read/user/:id', addMsgToRequest);
+app.get('/read/user/:id', (req, res) => {
+  let user = req.users.find(function (user) {
+    return user.id == req.params.id;
+  });
+  if (user) {
+    res.send(user);
+  }
+  else {
+    res.json({
+      error: { message: 'user not found', status: 404 }
+    });
+  }
+}
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
